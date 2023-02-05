@@ -5,6 +5,7 @@ from typing import Sequence
 from beaker.application import Application
 
 from smart_contracts.helloworld import HelloWorld
+from smart_contracts.bet import Bet
 
 
 class Lab:
@@ -26,5 +27,5 @@ class Lab:
 
 
 my_lab = Lab(
-    apps=[HelloWorld()],
+    apps=[HelloWorld(), Bet()],
 )

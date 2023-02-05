@@ -75,4 +75,3 @@ disallow_untyped_decorators = true
 disallow_any_generics = false
 implicit_reexport = false
 show_error_codes = true
-

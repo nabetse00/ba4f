@@ -164,3 +164,5 @@ cython_debug/
 
 # Received approval test files
 *.received.*
+ba4f.code-workspace
+node_modules

@@ -1,0 +1,65 @@
+{
+    "name": "Bet",
+    "methods": [
+        {
+            "name": "start_bet",
+            "args": [
+                {
+                    "type": "string",
+                    "name": "description"
+                },
+                {
+                    "type": "string[]",
+                    "name": "results"
+                },
+                {
+                    "type": "uint64",
+                    "name": "bet_lenght"
+                },
+                {
+                    "type": "address",
+                    "name": "oracle"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            }
+        },
+        {
+            "name": "place_bet",
+            "args": [
+                {
+                    "type": "pay",
+                    "name": "payment"
+                },
+                {
+                    "type": "uint64",
+                    "name": "result"
+                }
+            ],
+            "returns": {
+                "type": "(uint64,uint64)"
+            }
+        },
+        {
+            "name": "increase_bet",
+            "args": [
+                {
+                    "type": "pay",
+                    "name": "payment"
+                }
+            ],
+            "returns": {
+                "type": "(uint64,uint64)"
+            }
+        },
+        {
+            "name": "get_bet",
+            "args": [],
+            "returns": {
+                "type": "(uint64,uint64)"
+            }
+        }
+    ],
+    "networks": {}
+}
