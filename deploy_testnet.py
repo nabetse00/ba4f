@@ -196,7 +196,7 @@ def place_bet(
     )
     wait_for_confirmation(algod_client, result.tx_id, 10)
     print(
-        f"[place bet from {account.address}"
+        f"[place bet from {account.address} "
         f"for {amount} and result {bet_result} ] ==> {result.return_value}"
     )
     return result.return_value

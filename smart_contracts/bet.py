@@ -77,7 +77,8 @@ class Bet(Application):
     # should be ~5min before match kickoff
     # to avoid bettor advantage over timestamp from blockchain
     bet_end: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.uint64, default=Int(0)
+        stack_type=TealType.uint64, default=Int(0),
+        descr="bet end timestamp"
     )
 
     bet_description: Final[ApplicationStateValue] = ApplicationStateValue(
@@ -103,7 +104,6 @@ class Bet(Application):
         descr="min bet must cover box creation MDB + fee",
     )
 
-    # results
     bet_possible_results: Final[
         ReservedApplicationStateValue
     ] = ReservedApplicationStateValue(
@@ -119,7 +119,8 @@ class Bet(Application):
         stack_type=TealType.uint64,
         max_keys=8,
         key_gen=prefix_key_gen("results_amount"),
-        descr="App state variable storing bet results total amount, with 8 possible keys",
+        descr=
+        "App state variable storing bet results total amount, with 8 possible keys",
     )
 
     total_amount: Final[ApplicationStateValue] = ApplicationStateValue(
@@ -193,7 +194,6 @@ class Bet(Application):
             self.latest_bettor_account.set(Global.zero_address()),
             self.bettors_count.set(Int(0)),
             self.total_amount.set(Int(0)),
-            # self.result.set(Int(2)),  # TODO REMOVE
         )
 
     @external(authorize=Authorize.only(oracle_account))
