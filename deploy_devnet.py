@@ -1,4 +1,5 @@
 import base64
+import os
 from datetime import datetime
 from time import sleep
 from typing import Any
@@ -11,52 +12,45 @@ from algosdk.atomic_transaction_composer import (
 from algosdk.transaction import wait_for_confirmation
 from algosdk.v2client import algod, indexer
 from beaker import client, sandbox
+from dotenv import load_dotenv
 from progress.spinner import Spinner
 
 from smart_contracts.bet import Bet
 
-algod_address = "https://testnet-algorand.api.purestake.io/ps2"
-algod_token = "qAMLbrOhmT9ewbvFUkUwD8kOOJ6ifFCz1boJoXyb"
+load_dotenv("./smart_contracts/.env")
+
+algod_address = os.getenv("ALGOD_SERVER_TESTNET")
+algod_token = os.getenv("ALGOD_TOKEN_TESTNET")
 headers = {
     "X-API-Key": algod_token,
 }
 
-indexer_address = "https://testnet-algorand.api.purestake.io/idx2"
-indexer_token = algod_token
+indexer_address = os.getenv("INDEXER_SERVER_TESNET")
+indexer_token = os.getenv("INDEXER_TOKEN_TESTNET")
 headers = {
     "X-API-Key": indexer_token,
 }
 
-# clients
-# algod_client = sandbox.get_algod_client()  # type: ignore
+# clients for test net
 algod_client = algod.AlgodClient(algod_token, algod_address, headers)
-# algoidx_client = sandbox.get_indexer_client()  # type: ignore
 algoidx_client = indexer.IndexerClient(indexer_token, indexer_address, headers)
 
-
-# get the first 3 acct in the sandbox
-def generate_algorand_keypair():
-    private_key, address = account.generate_account()
-    print("My address: {}".format(address))
-    print("My private key: {}".format(private_key))
-    print("My passphrase: {}".format(mnemonic.from_private_key(private_key)))
-
-
 mnemonics = [
-    "giggle nature power crush thank salt arch purse bird waste cheese there wife myself measure soda panel love sauce because smile upgrade payment absent runway",
-    "energy critic coyote fade edge crew unknown audit lonely satisfy initial inside shove meat ethics window over segment thunder valve card project sister abstract stomach",
-    "short broken orchard cool child obtain voyage mandate pet total festival nasty mixed net fortune practice shop dutch spy amused pulse stool hole abandon tilt",
-    "mystery will huge disease plug exist city cancel such skull swamp accident cute inner cousin royal toddler lunch photo near reform icon area ability weather",
-    "awesome catch surge aunt faint east young add belt swarm fashion electric repeat jewel club april public bread relief rib test pretty general abstract female",
+    os.getenv("MNEMONIC1"),
+    os.getenv("MNEMONIC2"),
+    os.getenv("MNEMONIC3"),
+    os.getenv("MNEMONIC4"),
+    os.getenv("MNEMONIC4"),
+]
+addrs: list[str] = [
+    str(os.getenv("ADDR1")),
+    str(os.getenv("ADDR2")),
+    str(os.getenv("ADDR3")),
+    str(os.getenv("ADDR4")),
+    str(os.getenv("ADDR5")),
 ]
 
-addrs = [
-    "HZILGCZCVFKICCS4J2VUQVMNTAZR2URCGCAKRBBK475BI5E7CMLWDH6KTM",
-    "GLNQZSOM5JIYWUIMZPODJJVML367WFLPTEYFBVJL2B64L4ZJSEI2AO2TV4",
-    "CW52DW2WCNQ3U5HLVYDZRE25AS7VTEXZNBIDMLU5PAWVX6H7T6UGNK5PJE",
-    "OSIRDSTJBYTEHSE5S5L74NJ23BHALCNQBBXA44IU6C7XWZV5EODOALAY3U",
-    "TAU2YRKIFC4PGDRVMZ2JCQY77YBX2YBCGDRXV4HV4KE5LX6UQZOIZVIMNU",
-]
+print("")
 
 creator = sandbox.SandboxAccount(  # type: ignore
     addrs[0],
@@ -79,6 +73,22 @@ acct3 = sandbox.SandboxAccount(  # type: ignore
     AccountTransactionSigner(mnemonic.to_private_key(mnemonics[3])),
 )
 
+
+def check_accounts_balances(val: int):
+    for addr in addrs:
+        bal = algod_client.account_info(addr)["amount"]
+        if bal < val:
+            raise Exception(
+                f"not enought funds for {addr} / {bal} uAlgo,"
+                f"should be at least {val} uAlgo"
+                f"use {os.getenv('ALGO_TESTNET_DIPENSER')} testnet dispenser"
+            )
+        print(f"addrs: {addr} bal: {bal} uAlgo")
+
+
+check_accounts_balances(10_000_000)
+
+# if already deployed => change APP_ID
 APP_ID = 0
 # create an app client
 app_client = client.ApplicationClient(  # type: ignore
@@ -267,23 +277,9 @@ def wait_for_bet_end():
     t_s = get_timestamp(current_round)
 
     while t_s <= b_e:
-        for _ in range(0, 11):
+        for _ in range(0, 10):
             spinner.next()
             sleep(1)
-
-        c = app_client.call(
-            Bet.get_bet,
-            boxes=[
-                [
-                    app_client.app_id,
-                    encoding.decode_address(acct1.address),
-                ],  # type: ignore
-            ],
-            signer=acct1.signer,
-            suggested_params=algod_client.suggested_params(),
-        )
-        sleep(1)
-        wait_for_confirmation(algod_client, c.tx_id, 10)
         current_round = algod_client.status()["last-round"]
         t_s = get_timestamp(current_round)
         print(f" blck {current_round} {datetime.fromtimestamp(t_s)}: {t_s} / {b_e}")
@@ -491,7 +487,7 @@ result = app_client.call(
     suggested_params=algod_client.suggested_params(),
 )
 wait_for_confirmation(algod_client, result.tx_id, 10)
-print(f"===> get eranings result: ** {result.return_value} **")
+print(f"===> get earnings result: ** {result.return_value} **")
 
 delete_loosing_bets(creator)
 
