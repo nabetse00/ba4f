@@ -1,4 +1,4 @@
-from typing import Final, Literal
+from typing import Final
 
 from beaker.application import Application
 from beaker.decorators import Authorize, create, delete, external, internal
@@ -6,7 +6,6 @@ from beaker.lib.storage.mapping import Mapping
 from beaker.state import (
     ApplicationStateValue,
     ReservedApplicationStateValue,
-    identity_key_gen,
     prefix_key_gen,
 )
 from pyteal import (
@@ -14,26 +13,29 @@ from pyteal import (
     AppParam,
     Approve,
     Assert,
-    Btoi,
+    Balance,
     Bytes,
     Expr,
     For,
     Global,
     If,
+    InnerTxnBuilder,
     Int,
     Itob,
     Not,
+    Pop,
     ScratchVar,
     Seq,
     TealType,
     Txn,
-    While,
+    TxnField,
+    TxnType,
 )
 from pyteal.ast import abi
 
 APP_CREATOR = Seq(creator := AppParam.creator(Int(0)), creator.value())
 
-# Bettors record Box
+# Bettors record Box format
 class BettorRecord(abi.NamedTuple):
     result: abi.Field[abi.Uint64]
     amount: abi.Field[abi.Uint64]
@@ -57,6 +59,14 @@ class Bet(Application):
         descr="latest bettor account",
     )
 
+    # bettors count incremented when a bet is placed, d
+    # decrement when claime or deleted lossing bets
+    bettors_count: Final[ApplicationStateValue] = ApplicationStateValue(
+        stack_type=TealType.uint64,
+        default=Int(0),
+        descr="bettor count",
+    )
+
     # - Bet Result encoded as 0 => TBD, 1 => result 0,
     #   2 => result 1 , 3 => result 2, ...
     result: Final[ApplicationStateValue] = ApplicationStateValue(
@@ -77,12 +87,20 @@ class Bet(Application):
     )
 
     # - Min bet amount to cover MBR cost
-    _member_box_size = abi.size_of(BettorRecord)
+    _bettor_record_box_size = abi.size_of(BettorRecord)
+    _bettor_record_key_box_size = abi.size_of(abi.Address)
     BoxFlatMinBalance = 2500
     BoxByteMinBalance = 400
-    _min_balance = BoxFlatMinBalance + (_member_box_size * BoxByteMinBalance)
+    _flat_fee = 100000
+    _min_balance_per_box = (
+        BoxFlatMinBalance
+        + (_bettor_record_box_size + _bettor_record_key_box_size) * BoxByteMinBalance
+    )
     min_bet_amount: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.uint64, static=True, default=Int(_min_balance)
+        stack_type=TealType.uint64,
+        static=True,
+        default=Int(_min_balance_per_box + _flat_fee),
+        descr="min bet must cover box creation MDB + fee",
     )
 
     # results
@@ -104,10 +122,23 @@ class Bet(Application):
         descr="App state variable storing bet results total amount, with 8 possible keys",
     )
 
-    # Boxes
-    bettor_records = Mapping(abi.Address, BettorRecord,)
+    total_amount: Final[ApplicationStateValue] = ApplicationStateValue(
+        stack_type=TealType.uint64,
+        default=Int(0),
+        descr="bettor count",
+    )
 
-    ####
+    total_earnings: Final[ApplicationStateValue] = ApplicationStateValue(
+        stack_type=TealType.uint64,
+        default=Int(0),
+        descr="total collected fees",
+    )
+
+    # Boxes
+    bettor_records = Mapping(
+        abi.Address,
+        BettorRecord,
+    )
 
     @create
     def create(self) -> Expr:
@@ -160,6 +191,28 @@ class Bet(Application):
                 self.results_amounts[Itob(i.load())].set(Int(0)),
             ),
             self.latest_bettor_account.set(Global.zero_address()),
+            self.bettors_count.set(Int(0)),
+            self.total_amount.set(Int(0)),
+            # self.result.set(Int(2)),  # TODO REMOVE
+        )
+
+    @external(authorize=Authorize.only(oracle_account))
+    def set_bet_result(self, result: abi.Uint64, *, output: abi.Uint64) -> Expr:
+        return Seq(
+            Assert(
+                Global.latest_timestamp() > self.bet_end,
+                comment="bet must be closed before setting the result",
+            ),
+            Assert(
+                self.result == Int(0),
+                comment="Result must be 0 ie TBD - avoids reentry",
+            ),
+            Assert(
+                self.bet_possible_results[Itob(result.get())].exists(),
+                comment="Result should be in possible results array",
+            ),
+            self.result.set(result.get() + Int(1)),
+            output.set(self.result.get() - Int(1)),
         )
 
     @external
@@ -173,6 +226,13 @@ class Bet(Application):
 
         return Seq(
             Assert(
+                Txn.sender() != APP_CREATOR, comment="App creator account cannot bet"
+            ),
+            Assert(
+                Txn.sender() != Global.current_application_address(),
+                comment="App cannot bet !",
+            ),
+            Assert(
                 Txn.sender() == payment.get().sender(),
                 comment="Txn Sender must be the payment sender",
             ),
@@ -182,12 +242,12 @@ class Bet(Application):
             ),
             (amount := abi.Uint64()).set(payment.get().amount()),
             Assert(
-                result.get() > Int(0),
-                comment="result cannot be 0 [non ended bet]",
+                self.bet_possible_results[Itob(result.get())].exists(),
+                comment="Ressult must be in possible results",
             ),
             Assert(
                 amount.get() > self.min_bet_amount,
-                comment="bet amount must cover box creation MBR",
+                comment="bet amount must cover box creation MBR + flat_fee",
             ),
             Assert(
                 Global.latest_timestamp() < self.bet_end,
@@ -197,12 +257,14 @@ class Bet(Application):
                 Not(self.bettor_records[payment.get().sender()].exists()),
                 comment="Cannot re bet with place_bet function! use increase_bet",
             ),
+            amount.set(amount.get() - Int(self._flat_fee)),
             output.set(result, amount),
             self.bettor_records[payment.get().sender()].set(output),
             self.latest_bettor_account.set(Txn.sender()),
-            self.results_amounts[result].set(
-                self.results_amounts[result].get() + amount.get()
-            ),
+            self.results_amounts[result].increment(amount.get()),
+            self.total_earnings.increment(Int(self._flat_fee)),
+            self.total_amount.increment(amount.get()),
+            self.bettors_count.increment(),
         )
 
     @external
@@ -217,17 +279,96 @@ class Bet(Application):
         return Seq(
             Assert(Txn.sender() == payment.get().sender()),
             Assert(payment.get().receiver() == Global.current_application_address()),
-            Assert(payment.get().amount() > self.min_bet_amount),
-            Assert(Global.latest_timestamp() < self.bet_end),
-            Assert(self.bettor_records[payment.get().sender()].exists()),
+            # Assert(payment.get().amount() > self.min_bet_amount),
+            Assert(
+                Global.latest_timestamp() < self.bet_end,
+                comment="bet window must be open",
+            ),
+            Assert(
+                self.bettor_records[payment.get().sender()].exists(),
+                comment="bettor must have place a initial bet",
+            ),
             self.bettor_records[payment.get().sender()].store_into(output),
             output.result.store_into(result),
             output.amount.store_into(old_amount),
             (amount := abi.Uint64()).set(payment.get().amount() + old_amount.get()),
             output.set(result, amount),
             self.bettor_records[payment.get().sender()].set(output),
-             self.results_amounts[result].set(
-                self.results_amounts[result].get() + payment.get().amount())
+            self.results_amounts[result].set(
+                self.results_amounts[result].get() + payment.get().amount()
+            ),
+            self.total_amount.increment(payment.get().amount()),
+        )
+
+    @internal(TealType.none)
+    def pay(self, receiver: Expr, amount: Expr) -> Expr:
+        return InnerTxnBuilder.Execute(
+            {
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.receiver: receiver,
+                TxnField.amount: amount,
+                TxnField.fee: Int(0),
+            }
+        )
+
+    @external(authorize=Authorize.only(APP_CREATOR))
+    def get_earnings(self, *, output: abi.Uint64) -> Expr:
+        return Seq(
+            Assert(
+                self.total_earnings <= Balance(Global.current_application_address()),
+                comment="teoric amount should be equal to balance",
+            ),
+            output.set(self.total_earnings.get()),
+        )
+
+    """
+    Claim bet
+    Minimal fee = MIN_TXN_FEE * 2 
+    """
+
+    @external
+    def claim_bet(self, *, output: BettorRecord) -> Expr:
+        result = abi.Uint64()
+        amount = abi.Uint64()
+        a_t_pay = abi.Uint64()
+        return Seq(
+            Assert(
+                Global.latest_timestamp() > self.bet_end,
+                comment="bet must have ended",
+            ),
+            Assert(
+                self.bettor_records[Txn.sender()].exists(),
+                comment="record should exist",
+            ),
+            Assert(self.result.get() > Int(0), comment="result should not be 0"),
+            self.bettor_records[Txn.sender()].store_into(output),
+            output.result.store_into(result),
+            If(
+                result.get() == self.result.get() - Int(1),
+                Seq(  # then compute amount, pay txn, and remove box
+                    output.amount.store_into(amount),
+                    a_t_pay.set(
+                        amount.get()
+                        * self.total_amount.get()
+                        / self.results_amounts[result].get()
+                    ),
+                    Assert(
+                        a_t_pay.get() < Balance(Global.current_application_address()),
+                        comment="App balance must be greater to send ammount",
+                    ),
+                    # Log(Itob(a_t_pay.get())),
+                    Pop(self.bettor_records[Txn.sender()].delete()),
+                    self.pay(Txn.sender(), a_t_pay.get()),
+                    output.set(result, a_t_pay),
+                    self.bettors_count.decrement(),
+                ),
+                Seq(  # else no payment just remove box ...
+                    amount.set(0),
+                    output.set(result, amount),
+                    Pop(self.bettor_records[Txn.sender()].delete()),
+                    self.bettors_count.decrement(),
+                ),
+            ),
         )
 
     @external
@@ -236,6 +377,71 @@ class Bet(Application):
             self.bettor_records[Txn.sender()].store_into(output),
         )
 
-    @delete(authorize=Authorize.only(Global.creator_address()))
+    """
+    Deletes all loosing bets boxes
+    """
+
+    @external
+    def remove_loosing_bets(
+        self, bettors: abi.DynamicArray[abi.Address], *, output: abi.Uint64
+    ) -> Expr:
+        i = ScratchVar(TealType.uint64)
+        addr = abi.Address()
+        br = BettorRecord()  # type: ignore
+        result = abi.Uint64()
+        return Seq(
+            Assert(
+                Global.latest_timestamp() > self.bet_end,
+                comment="bet must have ended",
+            ),
+            Assert(self.result != Int(0), comment="Bet result should be resolved"),
+            output.set(0),
+            For(
+                i.store(Int(0)),
+                i.load() < bettors.length(),
+                i.store(i.load() + Int(1)),
+            ).Do(
+                bettors[i.load()].store_into(addr),
+                Assert(
+                    self.bettor_records[addr.get()].exists(),
+                    comment="Bettor record should exist",
+                ),
+                self.bettor_records[addr.get()].store_into(br),
+                br.result.store_into(result),
+                If(
+                    result.get() != (self.result - Int(1)),
+                    Seq(
+                        Pop(self.bettor_records[addr.get()].delete()),
+                        self.bettors_count.decrement(),
+                        output.set(output.get() + Int(1)),
+                    ),
+                ),
+            ),
+        )
+
+    @internal(TealType.none)
+    def pay_creator(
+        self,
+    ) -> Expr:
+        return InnerTxnBuilder.Execute(
+            {
+                TxnField.type_enum: TxnType.Payment,
+                TxnField.fee: Int(0),
+                TxnField.receiver: APP_CREATOR,
+                TxnField.amount: Int(0),
+                TxnField.close_remainder_to: APP_CREATOR,
+            }
+        )
+
+    # Delete app
+    # Send MBR funds to creator and delete app
+    @delete
     def delete(self) -> Expr:
-        return Approve()
+        return Seq(
+            Assert(
+                self.bettors_count == Int(0),
+                comment="Remaining bettors data close them before",
+            ),
+            self.pay_creator(),
+            Approve(),
+        )

@@ -26,6 +26,18 @@
             }
         },
         {
+            "name": "set_bet_result",
+            "args": [
+                {
+                    "type": "uint64",
+                    "name": "result"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
+            }
+        },
+        {
             "name": "place_bet",
             "args": [
                 {
@@ -54,10 +66,36 @@
             }
         },
         {
+            "name": "get_earnings",
+            "args": [],
+            "returns": {
+                "type": "uint64"
+            }
+        },
+        {
+            "name": "claim_bet",
+            "args": [],
+            "returns": {
+                "type": "(uint64,uint64)"
+            }
+        },
+        {
             "name": "get_bet",
             "args": [],
             "returns": {
                 "type": "(uint64,uint64)"
+            }
+        },
+        {
+            "name": "remove_loosing_bets",
+            "args": [
+                {
+                    "type": "address[]",
+                    "name": "bettors"
+                }
+            ],
+            "returns": {
+                "type": "uint64"
             }
         }
     ],

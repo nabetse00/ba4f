@@ -1,28 +1,44 @@
 #pragma version 8
-intcblock 0 1 2
-bytecblock 0x 0x6265745f656e64 0x6d696e5f6265745f616d6f756e74 0x151f7c75 0x6c61746573745f626574746f725f6163636f756e74 0x6f7261636c655f6163636f756e74 0x6265745f6465736372697074696f6e
+intcblock 0 1 2 100000
+bytecblock 0x 0x626574746f72735f636f756e74 0x726573756c74 0x6265745f656e64 0x151f7c75 0x746f74616c5f616d6f756e74 0x746f74616c5f6561726e696e6773 0x6f7261636c655f6163636f756e74 0x6c61746573745f626574746f725f6163636f756e74 0x6d696e5f6265745f616d6f756e74 0x6265745f6465736372697074696f6e
 txn NumAppArgs
 intc_0 // 0
 ==
-bnz main_l10
+bnz main_l18
 txna ApplicationArgs 0
 pushbytes 0xce3cfbbc // "start_bet(string,string[],uint64,address)void"
 ==
-bnz main_l9
+bnz main_l17
+txna ApplicationArgs 0
+pushbytes 0xe6be56e8 // "set_bet_result(uint64)uint64"
+==
+bnz main_l16
 txna ApplicationArgs 0
 pushbytes 0x1810c9bc // "place_bet(pay,uint64)(uint64,uint64)"
 ==
-bnz main_l8
+bnz main_l15
 txna ApplicationArgs 0
 pushbytes 0x597395d5 // "increase_bet(pay)(uint64,uint64)"
 ==
-bnz main_l7
+bnz main_l14
+txna ApplicationArgs 0
+pushbytes 0x5e6181c5 // "get_earnings()uint64"
+==
+bnz main_l13
+txna ApplicationArgs 0
+pushbytes 0x51bcf0c1 // "claim_bet()(uint64,uint64)"
+==
+bnz main_l12
 txna ApplicationArgs 0
 pushbytes 0x8df6f4a0 // "get_bet()(uint64,uint64)"
 ==
-bnz main_l6
+bnz main_l11
+txna ApplicationArgs 0
+pushbytes 0x9fc4344d // "remove_loosing_bets(address[])uint64"
+==
+bnz main_l10
 err
-main_l6:
+main_l10:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -31,15 +47,69 @@ intc_0 // 0
 !=
 &&
 assert
-callsub getbet_9
-store 10
-bytec_3 // 0x151f7c75
-load 10
+txna ApplicationArgs 1
+callsub removeloosingbets_15
+store 15
+bytec 4 // 0x151f7c75
+load 15
+itob
 concat
 log
 intc_1 // 1
 return
-main_l7:
+main_l11:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub getbet_14
+store 14
+bytec 4 // 0x151f7c75
+load 14
+concat
+log
+intc_1 // 1
+return
+main_l12:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub claimbet_13
+store 13
+bytec 4 // 0x151f7c75
+load 13
+concat
+log
+intc_1 // 1
+return
+main_l13:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+callsub getearnings_12
+store 12
+bytec 4 // 0x151f7c75
+load 12
+itob
+concat
+log
+intc_1 // 1
+return
+main_l14:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -51,22 +121,53 @@ assert
 txn GroupIndex
 intc_1 // 1
 -
-store 8
-load 8
+store 10
+load 10
 gtxns TypeEnum
 intc_1 // pay
 ==
 assert
+load 10
+callsub increasebet_10
+store 11
+bytec 4 // 0x151f7c75
+load 11
+concat
+log
+intc_1 // 1
+return
+main_l15:
+txn OnCompletion
+intc_0 // NoOp
+==
+txn ApplicationID
+intc_0 // 0
+!=
+&&
+assert
+txna ApplicationArgs 1
+btoi
+store 8
+txn GroupIndex
+intc_1 // 1
+-
+store 7
+load 7
+gtxns TypeEnum
+intc_1 // pay
+==
+assert
+load 7
 load 8
-callsub increasebet_8
+callsub placebet_9
 store 9
-bytec_3 // 0x151f7c75
+bytec 4 // 0x151f7c75
 load 9
 concat
 log
 intc_1 // 1
 return
-main_l8:
+main_l16:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -77,27 +178,16 @@ intc_0 // 0
 assert
 txna ApplicationArgs 1
 btoi
+callsub setbetresult_8
 store 6
-txn GroupIndex
-intc_1 // 1
--
-store 5
-load 5
-gtxns TypeEnum
-intc_1 // pay
-==
-assert
-load 5
+bytec 4 // 0x151f7c75
 load 6
-callsub placebet_7
-store 7
-bytec_3 // 0x151f7c75
-load 7
+itob
 concat
 log
 intc_1 // 1
 return
-main_l9:
+main_l17:
 txn OnCompletion
 intc_0 // NoOp
 ==
@@ -107,40 +197,40 @@ intc_0 // 0
 &&
 assert
 txna ApplicationArgs 1
-store 1
-txna ApplicationArgs 2
 store 2
+txna ApplicationArgs 2
+store 3
 txna ApplicationArgs 3
 btoi
-store 3
-txna ApplicationArgs 4
 store 4
-load 1
+txna ApplicationArgs 4
+store 5
 load 2
 load 3
 load 4
-callsub startbet_6
+load 5
+callsub startbet_7
 intc_1 // 1
 return
-main_l10:
+main_l18:
 txn OnCompletion
 intc_0 // NoOp
 ==
-bnz main_l14
+bnz main_l22
 txn OnCompletion
 pushint 5 // DeleteApplication
 ==
-bnz main_l13
+bnz main_l21
 err
-main_l13:
+main_l21:
 txn ApplicationID
 intc_0 // 0
 !=
 assert
-callsub delete_5
+callsub delete_6
 intc_1 // 1
 return
-main_l14:
+main_l22:
 txn ApplicationID
 intc_0 // 0
 ==
@@ -168,31 +258,40 @@ retsub
 // create
 create_2:
 proto 0 0
-bytec 5 // "oracle_account"
+bytec 7 // "oracle_account"
 bytec_0 // ""
 app_global_put
-bytec 4 // "latest_bettor_account"
+bytec 8 // "latest_bettor_account"
 bytec_0 // ""
 app_global_put
-pushbytes 0x726573756c74 // "result"
+bytec_1 // "bettors_count"
 intc_0 // 0
 app_global_put
-bytec_1 // "bet_end"
+bytec_2 // "result"
 intc_0 // 0
 app_global_put
-bytec 6 // "bet_description"
+bytec_3 // "bet_end"
+intc_0 // 0
+app_global_put
+bytec 10 // "bet_description"
 bytec_0 // ""
 app_global_put
 intc_0 // 0
-bytec_2 // "min_bet_amount"
+bytec 9 // "min_bet_amount"
 app_global_get_ex
-store 12
-store 11
-load 12
+store 17
+store 16
+load 17
 !
 assert
-bytec_2 // "min_bet_amount"
-pushint 8900 // 8900
+bytec 9 // "min_bet_amount"
+pushint 121700 // 121700
+app_global_put
+bytec 5 // "total_amount"
+intc_0 // 0
+app_global_put
+bytec 6 // "total_earnings"
+intc_0 // 0
 app_global_put
 retsub
 
@@ -202,7 +301,9 @@ proto 1 1
 frame_dig -1
 intc_0 // 0
 app_params_get AppCreator
+store 1
 store 0
+load 0
 ==
 retsub
 
@@ -210,22 +311,38 @@ retsub
 authonly_4:
 proto 1 1
 frame_dig -1
-global CreatorAddress
+bytec 7 // "oracle_account"
+app_global_get
+==
+retsub
+
+// auth_only
+authonly_5:
+proto 1 1
+frame_dig -1
+intc_0 // 0
+app_params_get AppCreator
+store 1
+store 0
+load 0
 ==
 retsub
 
 // delete
-delete_5:
+delete_6:
 proto 0 0
-txn Sender
-callsub authonly_4
-// unauthorized
+bytec_1 // "bettors_count"
+app_global_get
+intc_0 // 0
+==
+// Remaining bettors data close them before
 assert
+callsub paycreator_16
 intc_1 // 1
 return
 
 // start_bet
-startbet_6:
+startbet_7:
 proto 4 0
 intc_0 // 0
 dup
@@ -236,7 +353,7 @@ txn Sender
 callsub authonly_3
 // unauthorized
 assert
-bytec_1 // "bet_end"
+bytec_3 // "bet_end"
 app_global_get
 intc_0 // 0
 ==
@@ -267,62 +384,62 @@ global ZeroAddress
 !=
 // oracle cannot be 0 address
 assert
-bytec_1 // "bet_end"
+bytec_3 // "bet_end"
 frame_dig -2
 global LatestTimestamp
 +
 app_global_put
-bytec 6 // "bet_description"
+bytec 10 // "bet_description"
 frame_dig -4
 extract 2 0
 app_global_put
-bytec 5 // "oracle_account"
+bytec 7 // "oracle_account"
 frame_dig -1
 app_global_put
 intc_0 // 0
-store 13
-startbet_6_l1:
-load 13
+store 18
+startbet_7_l1:
+load 18
 frame_dig -3
 intc_0 // 0
 extract_uint16
 frame_bury 1
 frame_dig 1
 <
-bnz startbet_6_l5
+bnz startbet_7_l5
 intc_0 // 0
-store 13
-startbet_6_l3:
-load 13
+store 18
+startbet_7_l3:
+load 18
 frame_dig -3
 intc_0 // 0
 extract_uint16
 frame_bury 4
 frame_dig 4
 <
-bz startbet_6_l9
-load 13
+bz startbet_7_l9
+load 18
 itob
 callsub prefixkeygen_1
 intc_0 // 0
 app_global_put
-load 13
+load 18
 intc_1 // 1
 +
-store 13
-b startbet_6_l3
-startbet_6_l5:
+store 18
+b startbet_7_l3
+startbet_7_l5:
 frame_dig -3
 frame_dig -3
 intc_2 // 2
-load 13
+load 18
 *
 intc_2 // 2
 +
 extract_uint16
 intc_2 // 2
 +
-load 13
+load 18
 intc_1 // 1
 +
 frame_dig -3
@@ -331,10 +448,10 @@ extract_uint16
 frame_bury 3
 frame_dig 3
 ==
-bnz startbet_6_l8
+bnz startbet_7_l8
 frame_dig -3
 intc_2 // 2
-load 13
+load 18
 *
 intc_2 // 2
 +
@@ -343,38 +460,100 @@ intc_2 // 2
 extract_uint16
 intc_2 // 2
 +
-startbet_6_l7:
+startbet_7_l7:
 substring3
 frame_bury 2
-load 13
+load 18
 itob
 callsub prefixkeygen_0
 frame_dig 2
 extract 2 0
 app_global_put
-load 13
+load 18
 intc_1 // 1
 +
-store 13
-b startbet_6_l1
-startbet_6_l8:
+store 18
+b startbet_7_l1
+startbet_7_l8:
 frame_dig -3
 len
-b startbet_6_l7
-startbet_6_l9:
-bytec 4 // "latest_bettor_account"
+b startbet_7_l7
+startbet_7_l9:
+bytec 8 // "latest_bettor_account"
 global ZeroAddress
+app_global_put
+bytec_1 // "bettors_count"
+intc_0 // 0
+app_global_put
+bytec 5 // "total_amount"
+intc_0 // 0
 app_global_put
 retsub
 
+// set_bet_result
+setbetresult_8:
+proto 1 1
+intc_0 // 0
+txn Sender
+callsub authonly_4
+// unauthorized
+assert
+global LatestTimestamp
+bytec_3 // "bet_end"
+app_global_get
+>
+// bet must be closed before setting the result
+assert
+bytec_2 // "result"
+app_global_get
+intc_0 // 0
+==
+// Result must be 0 ie TBD - avoids reentry
+assert
+intc_0 // 0
+frame_dig -1
+itob
+callsub prefixkeygen_0
+app_global_get_ex
+store 20
+store 19
+load 20
+// Result should be in possible results array
+assert
+bytec_2 // "result"
+frame_dig -1
+intc_1 // 1
++
+app_global_put
+bytec_2 // "result"
+app_global_get
+intc_1 // 1
+-
+frame_bury 0
+retsub
+
 // place_bet
-placebet_7:
+placebet_9:
 proto 2 1
 bytec_0 // ""
 intc_0 // 0
 dupn 2
 bytec_0 // ""
 dup
+txn Sender
+intc_0 // 0
+app_params_get AppCreator
+store 1
+store 0
+load 0
+!=
+// App creator account cannot bet
+assert
+txn Sender
+global CurrentApplicationAddress
+!=
+// App cannot bet !
+assert
 frame_dig -2
 gtxns Sender
 txn Sender
@@ -390,28 +569,24 @@ assert
 frame_dig -2
 gtxns Amount
 frame_bury 1
-frame_dig -1
-intc_0 // 0
->
-// result cannot be 0 [non ended bet]
-assert
 intc_0 // 0
 frame_dig -1
+itob
 callsub prefixkeygen_0
 app_global_get_ex
-store 15
-store 14
-load 15
-// Result must be possible
+store 22
+store 21
+load 22
+// Ressult must be in possible results
 assert
 frame_dig 1
-bytec_2 // "min_bet_amount"
+bytec 9 // "min_bet_amount"
 app_global_get
 >
-// bet amount must cover box creation MBR
+// bet amount must cover box creation MBR + flat_fee
 assert
 global LatestTimestamp
-bytec_1 // "bet_end"
+bytec_3 // "bet_end"
 app_global_get
 <
 // bet windows must be open
@@ -419,12 +594,16 @@ assert
 frame_dig -2
 gtxns Sender
 box_get
-store 17
-store 16
-load 17
+store 24
+store 23
+load 24
 !
 // Cannot re bet with place_bet function! use increase_bet
 assert
+frame_dig 1
+intc_3 // 100000
+-
+frame_bury 1
 frame_dig -1
 itob
 frame_dig 1
@@ -439,7 +618,7 @@ frame_dig -2
 gtxns Sender
 frame_dig 0
 box_put
-bytec 4 // "latest_bettor_account"
+bytec 8 // "latest_bettor_account"
 txn Sender
 app_global_put
 frame_dig -1
@@ -452,10 +631,28 @@ app_global_get
 frame_dig 1
 +
 app_global_put
+bytec 6 // "total_earnings"
+bytec 6 // "total_earnings"
+app_global_get
+intc_3 // 100000
++
+app_global_put
+bytec 5 // "total_amount"
+bytec 5 // "total_amount"
+app_global_get
+frame_dig 1
++
+app_global_put
+bytec_1 // "bettors_count"
+bytec_1 // "bettors_count"
+app_global_get
+intc_1 // 1
++
+app_global_put
 retsub
 
 // increase_bet
-increasebet_8:
+increasebet_10:
 proto 1 1
 bytec_0 // ""
 intc_0 // 0
@@ -472,32 +669,28 @@ gtxns Receiver
 global CurrentApplicationAddress
 ==
 assert
-frame_dig -1
-gtxns Amount
-bytec_2 // "min_bet_amount"
-app_global_get
->
-assert
 global LatestTimestamp
-bytec_1 // "bet_end"
+bytec_3 // "bet_end"
 app_global_get
 <
+// bet window must be open
 assert
 frame_dig -1
 gtxns Sender
 box_get
-store 19
-store 18
-load 19
+store 26
+store 25
+load 26
+// bettor must have place a initial bet
 assert
 frame_dig -1
 gtxns Sender
 box_get
-store 21
-store 20
-load 21
+store 28
+store 27
+load 28
 assert
-load 20
+load 27
 frame_bury 0
 frame_dig 0
 intc_0 // 0
@@ -537,18 +730,287 @@ frame_dig -1
 gtxns Amount
 +
 app_global_put
+bytec 5 // "total_amount"
+bytec 5 // "total_amount"
+app_global_get
+frame_dig -1
+gtxns Amount
++
+app_global_put
+retsub
+
+// pay
+pay_11:
+proto 2 0
+itxn_begin
+intc_1 // pay
+itxn_field TypeEnum
+frame_dig -2
+itxn_field Receiver
+frame_dig -1
+itxn_field Amount
+intc_0 // 0
+itxn_field Fee
+itxn_submit
+retsub
+
+// get_earnings
+getearnings_12:
+proto 0 1
+intc_0 // 0
+txn Sender
+callsub authonly_5
+// unauthorized
+assert
+bytec 6 // "total_earnings"
+app_global_get
+global CurrentApplicationAddress
+balance
+<=
+// teoric amount should be equal to balance
+assert
+bytec 6 // "total_earnings"
+app_global_get
+frame_bury 0
+retsub
+
+// claim_bet
+claimbet_13:
+proto 0 1
+bytec_0 // ""
+intc_0 // 0
+dupn 4
+bytec_0 // ""
+dup
+intc_0 // 0
+dup
+bytec_0 // ""
+dup
+global LatestTimestamp
+bytec_3 // "bet_end"
+app_global_get
+>
+// bet must have ended
+assert
+txn Sender
+box_get
+store 30
+store 29
+load 30
+// record should exist
+assert
+bytec_2 // "result"
+app_global_get
+intc_0 // 0
+>
+// result should not be 0
+assert
+txn Sender
+box_get
+store 32
+store 31
+load 32
+assert
+load 31
+frame_bury 0
+frame_dig 0
+intc_0 // 0
+extract_uint64
+frame_bury 1
+frame_dig 1
+bytec_2 // "result"
+app_global_get
+intc_1 // 1
+-
+==
+bnz claimbet_13_l2
+intc_0 // 0
+frame_bury 2
+frame_dig 1
+itob
+frame_dig 2
+itob
+concat
+frame_bury 0
+txn Sender
+box_del
+pop
+bytec_1 // "bettors_count"
+bytec_1 // "bettors_count"
+app_global_get
+intc_1 // 1
+-
+app_global_put
+b claimbet_13_l3
+claimbet_13_l2:
+frame_dig 0
+pushint 8 // 8
+extract_uint64
+frame_bury 2
+frame_dig 2
+bytec 5 // "total_amount"
+app_global_get
+*
+frame_dig 1
+itob
+callsub prefixkeygen_1
+app_global_get
+/
+frame_bury 3
+frame_dig 3
+global CurrentApplicationAddress
+balance
+<
+// App balance must be greater to send ammount
+assert
+txn Sender
+box_del
+pop
+txn Sender
+frame_dig 3
+callsub pay_11
+frame_dig 1
+itob
+frame_dig 3
+itob
+concat
+frame_bury 0
+bytec_1 // "bettors_count"
+bytec_1 // "bettors_count"
+app_global_get
+intc_1 // 1
+-
+app_global_put
+claimbet_13_l3:
 retsub
 
 // get_bet
-getbet_9:
+getbet_14:
 proto 0 1
 bytec_0 // ""
 txn Sender
 box_get
-store 23
-store 22
-load 23
+store 34
+store 33
+load 34
 assert
-load 22
+load 33
 frame_bury 0
+retsub
+
+// remove_loosing_bets
+removeloosingbets_15:
+proto 1 1
+intc_0 // 0
+bytec_0 // ""
+dup
+intc_0 // 0
+dupn 2
+global LatestTimestamp
+bytec_3 // "bet_end"
+app_global_get
+>
+// bet must have ended
+assert
+bytec_2 // "result"
+app_global_get
+intc_0 // 0
+!=
+// Bet result should be resolved
+assert
+intc_0 // 0
+frame_bury 0
+intc_0 // 0
+store 35
+removeloosingbets_15_l1:
+load 35
+frame_dig -1
+intc_0 // 0
+extract_uint16
+frame_bury 4
+frame_dig 4
+<
+bz removeloosingbets_15_l5
+frame_dig -1
+pushint 32 // 32
+load 35
+*
+intc_2 // 2
++
+pushint 32 // 32
+extract3
+frame_bury 1
+frame_dig 1
+box_get
+store 37
+store 36
+load 37
+// Bettor record should exist
+assert
+frame_dig 1
+box_get
+store 39
+store 38
+load 39
+assert
+load 38
+frame_bury 2
+frame_dig 2
+intc_0 // 0
+extract_uint64
+frame_bury 3
+frame_dig 3
+bytec_2 // "result"
+app_global_get
+intc_1 // 1
+-
+!=
+bnz removeloosingbets_15_l4
+removeloosingbets_15_l3:
+load 35
+intc_1 // 1
++
+store 35
+b removeloosingbets_15_l1
+removeloosingbets_15_l4:
+frame_dig 1
+box_del
+pop
+bytec_1 // "bettors_count"
+bytec_1 // "bettors_count"
+app_global_get
+intc_1 // 1
+-
+app_global_put
+frame_dig 0
+intc_1 // 1
++
+frame_bury 0
+b removeloosingbets_15_l3
+removeloosingbets_15_l5:
+retsub
+
+// pay_creator
+paycreator_16:
+proto 0 0
+itxn_begin
+intc_1 // pay
+itxn_field TypeEnum
+intc_0 // 0
+itxn_field Fee
+intc_0 // 0
+app_params_get AppCreator
+store 1
+store 0
+load 0
+itxn_field Receiver
+intc_0 // 0
+itxn_field Amount
+intc_0 // 0
+app_params_get AppCreator
+store 1
+store 0
+load 0
+itxn_field CloseRemainderTo
+itxn_submit
 retsub
