@@ -128,7 +128,8 @@ class Bet(Application):
         stack_type=TealType.uint64,
         max_keys=8,
         key_gen=prefix_key_gen("results_amount"),
-        descr="App state variable storing bet results total amount, with 8 possible keys",
+        descr=
+        "App state variable storing bet results total amount, with 8 possible keys",
     )
 
     # Total amount betted
