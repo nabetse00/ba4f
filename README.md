@@ -22,7 +22,7 @@ Algorand Greenhouse Hack 3 -Learning Challenge: Box Storage With Beaker Bet cont
 
 Boxes have some advantages over local store for App.
 - no need to optin to use them (nice one less txn/fee/MBR)
-- there can be as many boxes as app needs (no one more no on less!)
+- there can be as many boxes as app needs (no one more no one less!)
 - can have any internal structure
 - can be deleted ie retreive its MBR when deleting app
 - on chain App is the only one that can read a box.
