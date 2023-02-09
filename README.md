@@ -6,11 +6,21 @@ This project presents a Bet contract that uses boxes to store
 bettors amounts relative to a result that is set from an oracle
 address.
 
+## Files
+
+- [bet contract](./smart_contracts/bet.py)
+- [demo sandbox localnet](./deploy_sandbox.py)
+- [demo testnet](./deploy_testnet.py)
+
+## Video demostration
+
+- [youtube](http://youtube.com/XXXXX)
+
 ## why boxes ?
 
 Boxes have some advantages over local store for App.
 - no need to optin to use them (nice one less txn/fee/MBR)
-- there can be as many boxes as app needs
+- there can be as many boxes as app needs (no one more no on less!)
 - can have any internal structure
 - can be deleted ie retreive its MBR when deleting app
 - on chain App is the only one that can read a box.
@@ -22,7 +32,7 @@ However, boxes have some drawbacks.
   before in order to get thier MBR back
 - If you access a box in a txn you must add it to boxes params
 
-In a case of a bet contract tha can have a lot of bettors 
+In a case of a bet contract tha can have a lot of bettors or just a few
 boxes make sense! Small MBR no need to optin optout. Cannot be read on chain
 by other contracts.
 
@@ -74,9 +84,9 @@ To write a box you have to store it inside an abi value:
 
 ```python
 output: BettorRecord
-(result := abi.Uint64()).set(Int(1))
-(amount := abi.Uint64()).set(Int(10))
-
+(result := abi.Uint64()).set(1)
+(amount := abi.Uint64()).set(10_000_000)
+...
 output.set(result, amount)
 self.bettor_records[Txn.sender()].set(output),
 ```
@@ -125,6 +135,8 @@ Note that boxes names are base64 encoded bytes so
 you have to decode it before usage.
 
 ```python
+import base64
+...
 boxes: list[dict[str, str]] = algoidx_client.application_boxes(app_client.app_id)[
     "boxes"
 ]
@@ -132,6 +144,7 @@ boxes_array: list[tuple[int, bytes]] = []
 for b_ in boxes:
     box: tuple[int, bytes] = (app_client.app_id, base64.b64decode(b_["name"]))
     boxes_array.append(box)
+...
 ```
 
 If your box key is an address you can get it back encoding bytes to string ie 
@@ -139,8 +152,6 @@ If your box key is an address you can get it back encoding bytes to string ie
 ```python
 encoding.encode_address(box_bytes)
 ```
-
-
 
 
 ## Contract
@@ -158,7 +169,6 @@ You can also simply run
 python -m smart_contracts 
 ```
 from root directory to generate artifact.
-
 
 
 ## Demo app in sandbox
@@ -241,6 +251,19 @@ Try to reset localnet:
 
 ```console
 algokit sandbox reset 
+```
+
+or increase bet window time:
+
+```python
+# call the method start method
+result = app_client.call(
+    Bet.start_bet,
+    description="test bet for match team A vs team B",
+    results=["1", "X", "2"],
+    bet_lenght=120, # 120sec = ~1min increment if needed
+    oracle=creator.address,
+)
 ```
 
 This should solve the issue.

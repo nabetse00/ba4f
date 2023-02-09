@@ -102,12 +102,12 @@ app_client = client.ApplicationClient(  # type: ignore
 if APP_ID == 0:
     app_creation = app_client.create()
     APP_ID = app_client.app_addr
-    # call the method start method
+    # call start bet method
     result = app_client.call(
         Bet.start_bet,
         description="test bet for match team A vs team B",
         results=["1", "X", "2"],
-        bet_lenght=120,
+        bet_lenght=120, # 120s ~ 1 min increment if needed
         oracle=creator.address,
     )
     wait_for_confirmation(algod_client, result.tx_id, 10)
