@@ -1,5 +1,6 @@
-# Boxes aplication: Bet contract
-# ba4f - Bet Algos 4 FUN 
+# Hackathon: Algorand Greenhouse Hack 3
+# Learning Challenge: Box Storage With Beaker
+# Bet contract - Bet Algos 4 FUN (ba4f) 
 
 ## Introduction
 
