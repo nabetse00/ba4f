@@ -43,7 +43,7 @@ result = app_client.call(
     Bet.start_bet,
     description="test bet for match team A vs team B",
     results=["1", "X", "2"],
-    bet_lenght=120, # 120sec = ~1min increment if needed
+    bet_lenght=120, # 120sec ~ 2min increment if needed
     oracle=creator.address,
 )
 wait_for_confirmation(algod_client, result.tx_id, 10)

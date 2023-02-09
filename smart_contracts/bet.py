@@ -9,7 +9,6 @@ from beaker.state import (
     prefix_key_gen,
 )
 from pyteal import (
-    # App,
     AppParam,
     Approve,
     Assert,
@@ -33,12 +32,18 @@ from pyteal import (
 )
 from pyteal.ast import abi
 
+# APP_CREATOR ADDRESS
 APP_CREATOR = Seq(creator := AppParam.creator(Int(0)), creator.value())
 
 # Bettors record Box format
 class BettorRecord(abi.NamedTuple):
     result: abi.Field[abi.Uint64]
     amount: abi.Field[abi.Uint64]
+
+
+"""
+Bet Contract
+"""
 
 
 class Bet(Application):
@@ -77,8 +82,7 @@ class Bet(Application):
     # should be ~5min before match kickoff
     # to avoid bettor advantage over timestamp from blockchain
     bet_end: Final[ApplicationStateValue] = ApplicationStateValue(
-        stack_type=TealType.uint64, default=Int(0),
-        descr="bet end timestamp"
+        stack_type=TealType.uint64, default=Int(0), descr="bet end timestamp"
     )
 
     bet_description: Final[ApplicationStateValue] = ApplicationStateValue(
@@ -87,12 +91,12 @@ class Bet(Application):
         descr="Bet Description ie match A vs B - YYYY/MM/DD HH:MM",
     )
 
-    # - Min bet amount to cover MBR cost
+    # Min bet amount to cover MBR cost
     _bettor_record_box_size = abi.size_of(BettorRecord)
     _bettor_record_key_box_size = abi.size_of(abi.Address)
     BoxFlatMinBalance = 2500
     BoxByteMinBalance = 400
-    _flat_fee = 100000
+    _flat_fee = 100000  # Creator fee 0.1 algo per bet
     _min_balance_per_box = (
         BoxFlatMinBalance
         + (_bettor_record_box_size + _bettor_record_key_box_size) * BoxByteMinBalance
@@ -104,6 +108,9 @@ class Bet(Application):
         descr="min bet must cover box creation MDB + fee",
     )
 
+    # bet possible results with a desciption
+    # for example [ "1", "X", "2" ] or
+    # [ "player 1 wins", "player 2 wins", "player 3 wins", "draw", ... ]
     bet_possible_results: Final[
         ReservedApplicationStateValue
     ] = ReservedApplicationStateValue(
@@ -113,22 +120,25 @@ class Bet(Application):
         descr="App state variable storing possible results, with 8 possible keys",
     )
 
+    # Stores total amount betted useful for bet claim amount
+    # computation
     results_amounts: Final[
         ReservedApplicationStateValue
     ] = ReservedApplicationStateValue(
         stack_type=TealType.uint64,
         max_keys=8,
         key_gen=prefix_key_gen("results_amount"),
-        descr=
-        "App state variable storing bet results total amount, with 8 possible keys",
+        descr="App state variable storing bet results total amount, with 8 possible keys",
     )
 
+    # Total amount betted
     total_amount: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.uint64,
         default=Int(0),
-        descr="bettor count",
+        descr="total amount betted",
     )
 
+    # earnings for app creator from flat_fee
     total_earnings: Final[ApplicationStateValue] = ApplicationStateValue(
         stack_type=TealType.uint64,
         default=Int(0),
@@ -178,18 +188,14 @@ class Bet(Application):
                 i.load() < results.length(),
                 i.store(i.load() + Int(1)),
             ).Do(
-                results[i.load()].use(
-                    lambda value: self.bet_possible_results[Itob(i.load())].set(
-                        value.get()
-                    )
+                Seq(
+                    results[i.load()].use(
+                        lambda value: self.bet_possible_results[Itob(i.load())].set(
+                            value.get()
+                        )
+                    ),
+                    self.results_amounts[Itob(i.load())].set(Int(0)),
                 )
-            ),
-            For(
-                i.store(Int(0)),
-                i.load() < results.length(),
-                i.store(i.load() + Int(1)),
-            ).Do(
-                self.results_amounts[Itob(i.load())].set(Int(0)),
             ),
             self.latest_bettor_account.set(Global.zero_address()),
             self.bettors_count.set(Int(0)),

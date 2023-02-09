@@ -1,4 +1,5 @@
 # Boxes aplication: Bet contract
+# ba4f - Bet Algos 4 FUN 
 
 ## Introduction
 
@@ -261,7 +262,7 @@ result = app_client.call(
     Bet.start_bet,
     description="test bet for match team A vs team B",
     results=["1", "X", "2"],
-    bet_lenght=120, # 120sec = ~1min increment if needed
+    bet_lenght=120, # 120sec ~ 2min increment if needed
     oracle=creator.address,
 )
 ```
