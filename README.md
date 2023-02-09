@@ -300,7 +300,7 @@ App created [XXX..XXX] with app id {app_id} and addr [XXX...XXX]
 Will give our app id and you can check
 https://testnet.algoexplorer.io/application/{app_id}
 
-For tansaction add check app is closed:
+For transaction add check app is closed:
 
 ![app closed](./media/appclosed.png)
 
@@ -313,7 +313,7 @@ This project has been generated using AlgoKit. See [Algokit Setup](#algokit-setu
 
 ### Initial setup
 
-1. Clone this repository: `git clone {repository_url}`
+1. Clone this repository: `git clone https://github.com/nabetse00/ba4f`
 2. Install pre-requisites:
    - If you have AlgoKit installed, run `algokit bootstrap poetry` within this folder;
    - or:
