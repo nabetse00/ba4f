@@ -274,7 +274,7 @@ This should solve the issue.
 
 ### How to run 
 
-First populte .env file as [.env.template](./smart_contracts/.env.template)
+First populate .env file as [.env.template](./smart_contracts/.env.template)
 explains.
 
 Go to https://bank.testnet.algorand.network/ dispenser and fund
@@ -300,7 +300,7 @@ App created [XXX..XXX] with app id {app_id} and addr [XXX...XXX]
 Will give our app id and you can check
 https://testnet.algoexplorer.io/application/{app_id}
 
-For transaction add check app is closed:
+For transactions and also check app is closed:
 
 ![app closed](./media/appclosed.png)
 
