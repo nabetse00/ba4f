@@ -4,6 +4,8 @@
 
 ## Introduction
 
+Submission for greenhouse 3 hack - https://gitcoin.co/issue/29662
+
 This project presents a Bet contract that uses boxes to store
 bettors amounts relative to a result that is set from an oracle
 address.
