@@ -34,15 +34,15 @@ However, boxes have some drawbacks.
   before in order to get thier MBR back
 - If you access a box in a txn you must add it to boxes params
 
-In a case of a bet contract that can have a lot of bettors or just a few
-boxes make sense! Small MBR no need to optin. Cannot be read on chain
+In case of a bet contract, that can have a lot of bettors or just a few,
+boxes make sense! Small MBR, no need to optin. Cannot be read on chain
 by other contracts.
 
 ## implemetation
 
 Contract [bet.py](./smart_contracts/bet.py) uses beaker mapping to
-create a boxes with `bettor address` as `key `and a `named tuple`
-as its value containin a `result Uint64` as bet predicted result and 
+create boxes with `bettor address` as `key `and a `named tuple`
+as its value containing a `result Uint64` as bet predicted result and 
 `amount Uint64` as the amount betted.
 
 ```python
@@ -110,7 +110,7 @@ output.result.use(lamba x: ... )
 ```
 
 Don't forget to add any box your app call uses to the boxes
-in the transaction encoding data to bytes. To encode an address
+in the transaction, encoding data to bytes. To encode an address
 use encoding.decode_address(account.address).
 
 ```python
@@ -199,7 +199,7 @@ docker: Container algokit_algod  Healthy
 Started; execute `algokit sandbox status` to check the status.
 ```
 
-Then install additional requirement in your venv
+Then install additional requirement in your python venv
 
 ```console 
 pip install -r .\requirements.txt
