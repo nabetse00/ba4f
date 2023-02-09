@@ -57,7 +57,7 @@ bettor_records = Mapping(
     BettorRecord,)
 ```
 
-It important to operate boxes MBR before had to ensure MBR 
+It's important to operate boxes MBR before hand to ensure MBR 
 for your app:
 
 ```python
