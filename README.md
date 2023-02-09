@@ -15,8 +15,8 @@ address.
 - [demo testnet](./deploy_testnet.py)
 
 ## Video demostration
-
-- [youtube](http://youtube.com/XXXXX)
+Algorand Greenhouse Hack 3 -Learning Challenge: Box Storage With Beaker Bet contract
+- [youtube video](https://youtu.be/4Ylo40Jm4UM)
 
 ## why boxes ?
 

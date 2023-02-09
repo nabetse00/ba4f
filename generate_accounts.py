@@ -3,7 +3,7 @@ from algosdk import account, mnemonic
 from algosdk.v2client import algod, indexer
 
 algod_address = "https://testnet-algorand.api.purestake.io/ps22"
-algod_token = "qAMLbrOhmT9ewbvFUkUwD8kOOJ6ifFCz1boJoXyb"
+algod_token = "your_purestake_api_key"
 headers = {
     "X-API-Key": algod_token,
 }
@@ -29,5 +29,5 @@ def generate_algorand_keypair(index: int):
     print("My passphrase: {}".format(mnemonic.from_private_key(private_key)))
     print("========================")
 
-for i in range(0,3):
+for i in range(0,4):
     generate_algorand_keypair(i)
