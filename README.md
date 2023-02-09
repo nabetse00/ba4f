@@ -34,8 +34,8 @@ However, boxes have some drawbacks.
   before in order to get thier MBR back
 - If you access a box in a txn you must add it to boxes params
 
-In a case of a bet contract tha can have a lot of bettors or just a few
-boxes make sense! Small MBR no need to optin optout. Cannot be read on chain
+In a case of a bet contract that can have a lot of bettors or just a few
+boxes make sense! Small MBR no need to optin. Cannot be read on chain
 by other contracts.
 
 ## implemetation
